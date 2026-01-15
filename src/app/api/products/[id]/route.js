@@ -9,9 +9,15 @@ export async function GET(request, { params }) {
     const product = res.rows[0];
     
     if (product) {
-      const mediaRes = await db.query('SELECT url, type FROM product_media WHERE product_id = $1', [params.id]);
-      const media = mediaRes.rows;
-      product.media = media.length > 0 ? media : [{ url: product.image_url, type: 'image' }]; // Fallback
+      try {
+        const mediaRes = await db.query('SELECT url, type FROM product_media WHERE product_id = $1', [params.id]);
+        const media = mediaRes.rows;
+        product.media = media.length > 0 ? media : [{ url: product.image_url, type: 'image' }]; // Fallback
+      } catch (mediaError) {
+        console.error('Error fetching media for product ' + params.id, mediaError);
+        // Fallback if media fetch fails
+        product.media = [{ url: product.image_url, type: 'image' }];
+      }
       return NextResponse.json(product);
     }
     

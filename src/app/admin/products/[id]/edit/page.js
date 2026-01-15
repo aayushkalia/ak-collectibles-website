@@ -27,8 +27,8 @@ export default function EditProductPage({ params }) {
     fetch(`/api/products/${params.id}`)
       .then(res => res.json())
       .then(data => {
-        if (data.message) {
-          showToast('Product not found', 'error');
+        if (data.message || data.error) {
+          showToast(data.message || data.error, 'error');
           router.push('/admin');
           return;
         }
