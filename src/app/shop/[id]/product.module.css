@@ -1,0 +1,214 @@
+.container {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  color: #666;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: var(--color-deep-green);
+}
+
+.productLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin-bottom: 4rem;
+}
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.galleryContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mainStage {
+  width: 100%;
+  aspect-ratio: 1; /* Square aspect ratio mostly used in e-commerce, or 4:3 */
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #eee;
+}
+
+.mainMedia {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumbnailStrip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.thumbnailButton {
+  width: 60px;
+  height: 60px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  background: white;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.thumbnailButton.activeThumbnail {
+  border-color: var(--color-deep-green);
+  box-shadow: 0 0 0 1px var(--color-deep-green);
+}
+
+.thumbnailImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.videoThumbnail {
+  width: 100%;
+  height: 100%;
+  background-color: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+}
+
+.category {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #e0f2f1;
+  color: var(--color-deep-green);
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  align-self: flex-start;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-cinzel);
+  color: var(--color-deep-green);
+  line-height: 1.2;
+}
+
+.description {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #555;
+  margin-bottom: 2.5rem;
+}
+
+.purchaseCard {
+  padding: 2rem;
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+}
+
+.priceLabel {
+  font-size: 0.9rem;
+  color: #888;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.price {
+  font-size: 2.5rem;
+  color: var(--color-gold-dark);
+  font-weight: bold;
+  margin: 0;
+  font-family: var(--font-inter);
+}
+
+.auctionInfo {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #fff8e1;
+  border-left: 4px solid var(--color-gold);
+  border-radius: 4px;
+  color: #8d6e63;
+  font-weight: 600;
+}
+
+.actionButton {
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--color-deep-green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.actionButton:hover {
+  background-color: var(--color-deep-green-light);
+  transform: translateY(-1px);
+}
+
+.securityBadges {
+  font-size: 0.8rem;
+  color: #999;
+  text-align: center;
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .productLayout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .imageWrapper {
+    position: static;
+  }
+
+  .actionContainer {
+      flex-direction: column; 
+      align-items: stretch;
+  }
+}
