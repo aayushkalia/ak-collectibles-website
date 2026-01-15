@@ -6,8 +6,9 @@ import ProductGallery from '@/components/ProductGallery';
 
 export const dynamic = 'force-dynamic';
 
-export default function ProductPage({ params }) {
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(params.id);
+export default async function ProductPage({ params }) {
+  const productRes = await db.query('SELECT * FROM products WHERE id = $1', [params.id]);
+  const product = productRes.rows[0];
 
   if (!product) {
     return (
@@ -18,10 +19,12 @@ export default function ProductPage({ params }) {
     );
   }
 
-  const isAuction = product.is_auction === 1;
+  // Handle boolean conversion if needed (Postgres driver usually returns boolean for boolean type)
+  const isAuction = product.is_auction === true; 
 
   // Fetch additional media
-  const mediaItems = db.prepare('SELECT * FROM product_media WHERE product_id = ?').all(params.id);
+  const mediaRes = await db.query('SELECT * FROM product_media WHERE product_id = $1', [params.id]);
+  const mediaItems = mediaRes.rows;
   const allMedia = mediaItems.length > 0 
     ? mediaItems 
     : [{ type: 'image', url: product.image_url }];
@@ -29,7 +32,8 @@ export default function ProductPage({ params }) {
   // Fetch highest bidder (if auction)
   let highestBidderId = null;
   if (isAuction) {
-     const lastBid = db.prepare("SELECT user_id FROM bids WHERE product_id = ? AND status = 'valid' ORDER BY amount DESC LIMIT 1").get(params.id);
+     const lastBidRes = await db.query("SELECT user_id FROM bids WHERE product_id = $1 AND status = 'valid' ORDER BY amount DESC LIMIT 1", [params.id]);
+     const lastBid = lastBidRes.rows[0];
      if (lastBid) {
        highestBidderId = lastBid.user_id;
      }
@@ -65,7 +69,7 @@ export default function ProductPage({ params }) {
                 {isAuction ? 'Current Highest Bid' : 'Price'}
               </p>
               <p className={styles.price}>
-                ₹{product.price.toFixed(2)}
+                ₹{Number(product.price).toFixed(2)}
               </p>
             </div>
 

@@ -5,8 +5,9 @@ import styles from '../shop/shop.module.css';
 
 export const dynamic = 'force-dynamic';
 
-export default function AuctionsPage() {
-  const auctions = db.prepare('SELECT * FROM products WHERE is_auction = 1 ORDER BY auction_end_time ASC').all();
+export default async function AuctionsPage() {
+  const auctionsRes = await db.query('SELECT * FROM products WHERE is_auction = TRUE ORDER BY auction_end_time ASC');
+  const auctions = auctionsRes.rows;
 
   return (
     <main className={styles.container}>

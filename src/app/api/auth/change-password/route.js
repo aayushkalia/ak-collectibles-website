@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import db from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
@@ -21,8 +21,9 @@ export async function POST(req) {
       );
     }
 
-    // Get user from DB to get the hashed password
-    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(session.user.id);
+    // Get user from DB
+    const userRes = await db.query("SELECT * FROM users WHERE id = $1", [session.user.id]);
+    const user = userRes.rows[0];
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -39,7 +40,7 @@ export async function POST(req) {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // Update DB
-    db.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashedNewPassword, user.id);
+    await db.query("UPDATE users SET password = $1 WHERE id = $2", [hashedNewPassword, user.id]);
 
     return NextResponse.json({ message: "Password updated successfully" });
 

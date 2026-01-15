@@ -5,7 +5,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET() {
   try {
-    const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
+    const res = await db.query('SELECT * FROM products ORDER BY created_at DESC');
+    const products = res.rows;
     return NextResponse.json(products);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -31,20 +32,21 @@ export async function POST(request) {
 
     console.log('[POST] Creating product. Main Image:', mainImage);
 
-    const stmt = db.prepare(`
+    const result = await db.query(`
       INSERT INTO products (title, description, price, shipping_cost, category, image_url, is_auction, auction_end_time, stock, max_per_user)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id
+    `, [title, description, price, shipping_cost || 0, category, mainImage, is_auction, auction_end_time || null, stock || 1, max_per_user || null]);
 
-    const result = stmt.run(title, description, price, shipping_cost || 0, category, mainImage, is_auction, auction_end_time || null, stock || 1, max_per_user || null);
-    const productId = result.lastInsertRowid;
+    const productId = result.rows[0].id;
     console.log('[POST] Product created with ID:', productId);
 
     // Insert Media
     if (media && Array.isArray(media)) {
-      const mediaStmt = db.prepare('INSERT INTO product_media (product_id, url, type) VALUES (?, ?, ?)');
       for (const item of media) {
-        if (item.url)  mediaStmt.run(productId, item.url, item.type);
+        if (item.url) {
+          await db.query('INSERT INTO product_media (product_id, url, type) VALUES ($1, $2, $3)', [productId, item.url, item.type]);
+        }
       }
       console.log(`[POST] Inserted ${media.length} media items.`);
     }

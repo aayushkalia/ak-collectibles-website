@@ -1,13 +1,16 @@
 import db from '@/lib/db';
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
-import styles from './shop/shop.module.css'; // Reusing shop styles for grid
+import styles from './shop/shop.module.css';
 
 export const dynamic = 'force-dynamic';
 
-export default function Home() {
-  const auctions = db.prepare('SELECT * FROM products WHERE is_auction = 1 ORDER BY auction_end_time ASC LIMIT 4').all();
-  const newArrivals = db.prepare('SELECT * FROM products WHERE is_auction = 0 ORDER BY created_at DESC LIMIT 4').all();
+export default async function Home() {
+  const auctionsRes = await db.query('SELECT * FROM products WHERE is_auction = TRUE ORDER BY auction_end_time ASC LIMIT 4');
+  const auctions = auctionsRes.rows;
+
+  const newArrivalsRes = await db.query('SELECT * FROM products WHERE is_auction = FALSE ORDER BY created_at DESC LIMIT 4');
+  const newArrivals = newArrivalsRes.rows;
 
   return (
     <main className={styles.container}>

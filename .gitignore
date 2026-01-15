@@ -5,3 +5,5 @@ database.db
 database.db-journal
 .env.local
 .env
+
+ADMIN_COMMANDS.md

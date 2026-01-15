@@ -14,13 +14,17 @@ export default async function AdminDashboard() {
   }
 
   // Analytics Queries
-  const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
+  const productsRes = await db.query('SELECT * FROM products ORDER BY created_at DESC');
+  const products = productsRes.rows;
   
-  const revenueResult = db.prepare("SELECT SUM(total_amount) as revenue FROM orders WHERE status != 'cancelled'").get();
-  const totalRevenue = revenueResult ? revenueResult.revenue || 0 : 0;
+  const revenueRes = await db.query("SELECT SUM(total_amount) as revenue FROM orders WHERE status != 'cancelled'");
+  const totalRevenue = revenueRes.rows[0].revenue ? Number(revenueRes.rows[0].revenue) : 0;
 
-  const ordersCount = db.prepare('SELECT COUNT(*) as count FROM orders').get().count;
-  const usersCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'user'").get().count;
+  const ordersCountRes = await db.query('SELECT COUNT(*) as count FROM orders');
+  const ordersCount = ordersCountRes.rows[0].count;
+
+  const usersCountRes = await db.query("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
+  const usersCount = usersCountRes.rows[0].count;
   
   const soldCount = products.filter(p => p.status === 'sold').length;
   const totalProducts = products.length;
@@ -86,9 +90,9 @@ export default async function AdminDashboard() {
                 <td style={{ padding: '1rem', color: '#888' }}>#{p.id}</td>
                 <td style={{ padding: '1rem', fontWeight: '500' }}>{p.title}</td>
                 <td style={{ padding: '1rem' }}>{p.category}</td>
-                <td style={{ padding: '1rem' }}>₹{p.price.toFixed(2)}</td>
+                <td style={{ padding: '1rem' }}>₹{Number(p.price).toFixed(2)}</td>
                 <td style={{ padding: '1rem' }}>
-                  {p.is_auction === 1 ? (
+                  {p.is_auction === true ? (
                     <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>Auction</span>
                   ) : (
                     <span style={{ color: 'green' }}>Direct Buy</span>
@@ -111,7 +115,7 @@ export default async function AdminDashboard() {
                     }}>
                       Edit
                     </Link>
-                    {p.is_auction === 1 && (
+                    {p.is_auction === true && (
                       <Link href={`/admin/products/${p.id}/bids`} style={{ 
                         padding: '0.25rem 0.75rem', 
                         backgroundColor: '#e8f5e9', 

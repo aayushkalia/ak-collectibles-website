@@ -13,7 +13,8 @@ export default async function AdminUsersPage() {
   }
 
   // Fetch users (excluding password)
-  const users = db.prepare('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC').all();
+  const usersRes = await db.query('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC');
+  const users = usersRes.rows;
 
   return (
     <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>

@@ -19,50 +19,59 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: 'Invalid bid amount' }, { status: 400 });
     }
 
-    // Wrap in a transaction to ensure integrity
-    const result = db.transaction(() => {
-      // 1. Get Product (Fresh Read)
-      const product = db.prepare('SELECT * FROM products WHERE id = ?').get(productId);
+    const client = await db.connect();
 
-      if (!product) {
-        throw new Error('Product not found');
-      }
+    try {
+        await client.query('BEGIN');
 
-      if (product.is_auction !== 1) {
-        throw new Error('This product is not up for auction');
-      }
+        // 1. Get Product (Fresh Read)
+        const productRes = await client.query('SELECT * FROM products WHERE id = $1', [productId]);
+        const product = productRes.rows[0];
 
-      const now = new Date();
-      const endTime = new Date(product.auction_end_time);
+        if (!product) {
+            throw new Error('Product not found');
+        }
 
-      if (now > endTime) {
-        throw new Error('Auction has ended');
-      }
+        // is_auction might be boolean or 0/1 depending on DB config, handled loosely
+        if (!product.is_auction) {
+            throw new Error('This product is not up for auction');
+        }
 
-      // 2. Validate Bid Amount
-      // Minimum increment logical check (e.g. must be 10 higher?)
-      // For now, strict > current price
-      if (amount <= product.price) {
-        throw new Error(`Bid must be higher than current price (₹${product.price})`);
-      }
+        const now = new Date();
+        const endTime = new Date(product.auction_end_time);
 
-      // 3. Insert Bid
-      db.prepare(`
-        INSERT INTO bids (product_id, user_id, amount)
-        VALUES (?, ?, ?)
-      `).run(productId, userId, amount);
+        if (now > endTime) {
+            throw new Error('Auction has ended');
+        }
 
-      // 4. Update Product Price
-      db.prepare(`
-        UPDATE products 
-        SET price = ?
-        WHERE id = ?
-      `).run(amount, productId);
+        // 2. Validate Bid Amount
+        if (Number(amount) <= Number(product.price)) {
+            throw new Error(`Bid must be higher than current price (₹${product.price})`);
+        }
 
-      return { success: true, newPrice: amount };
-    })();
+        // 3. Insert Bid
+        await client.query(`
+            INSERT INTO bids (product_id, user_id, amount)
+            VALUES ($1, $2, $3)
+        `, [productId, userId, amount]);
 
-    return NextResponse.json(result);
+        // 4. Update Product Price
+        await client.query(`
+            UPDATE products 
+            SET price = $1
+            WHERE id = $2
+        `, [amount, productId]);
+
+        await client.query('COMMIT');
+        
+        return NextResponse.json({ success: true, newPrice: amount });
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
 
   } catch (error) {
     console.error('Bidding Error:', error);

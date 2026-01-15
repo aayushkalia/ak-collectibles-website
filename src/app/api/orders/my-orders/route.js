@@ -11,11 +11,12 @@ export async function GET() {
   }
 
   try {
-    const orders = db.prepare(`
+    const res = await db.query(`
       SELECT * FROM orders 
-      WHERE user_id = ? 
+      WHERE user_id = $1 
       ORDER BY created_at DESC
-    `).all(session.user.id);
+    `, [session.user.id]);
+    const orders = res.rows;
 
     return NextResponse.json(orders);
   } catch (error) {

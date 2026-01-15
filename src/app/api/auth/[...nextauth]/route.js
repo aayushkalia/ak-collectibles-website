@@ -16,7 +16,8 @@ export const authOptions = {
           return null
         }
 
-        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(credentials.email)
+        const res = await db.query('SELECT * FROM users WHERE email = $1', [credentials.email])
+        const user = res.rows[0]
 
         if (!user) {
           return null

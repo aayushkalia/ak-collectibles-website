@@ -26,10 +26,14 @@ export async function POST(req) {
     let totalAmount = 0;
     const validatedItems = [];
 
-    // Use a transaction for validation + creation to ensure consistency
-    const orderResult = db.transaction(() => {
+    const client = await db.connect();
+
+    try {
+        await client.query('BEGIN');
+
         for (const item of items) {
-            const product = db.prepare('SELECT * FROM products WHERE id = ?').get(item.id);
+            const res = await client.query('SELECT * FROM products WHERE id = $1', [item.id]);
+            const product = res.rows[0];
 
             // 1. Existence Check
             if (!product) {
@@ -52,19 +56,20 @@ export async function POST(req) {
             }
 
             // 4. Auction Winner Check (Critical)
-            if (product.is_auction === 1) {
+            if (product.is_auction) { // Postgres boolean might be returned as true/false
                 // Check if auction is ended
                 if (new Date(product.auction_end_time) > new Date()) {
                     throw new Error(`Auction for ${product.title} has not ended yet.`);
                 }
 
                 // Check highest bidder
-                const winner = db.prepare(`
+                const winnerRes = await client.query(`
                     SELECT user_id FROM bids 
-                    WHERE product_id = ? AND status = 'valid' 
+                    WHERE product_id = $1 AND status = 'valid' 
                     ORDER BY amount DESC 
                     LIMIT 1
-                `).get(product.id);
+                `, [product.id]);
+                const winner = winnerRes.rows[0];
 
                 if (!winner || winner.user_id !== Number(session.user.id)) {
                      throw new Error(`You are not the winner of auction ${product.title}.`);
@@ -79,40 +84,45 @@ export async function POST(req) {
             });
             
             // Add Price + Shipping Cost
-            totalAmount += (product.price * item.quantity) + (product.shipping_cost || 0);
+            totalAmount += (Number(product.price) * item.quantity) + (Number(product.shipping_cost) || 0);
         }
 
         // All checks passed. Create Order.
-        const result = db.prepare(`
+        const orderRes = await client.query(`
             INSERT INTO orders (user_id, total_amount, status, shipping_address, payment_method) 
-            VALUES (?, ?, ?, ?, ?)
-        `).run(session.user.id, totalAmount, 'pending', address, paymentMethod || 'COD');
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id
+        `, [session.user.id, totalAmount, 'pending', address, paymentMethod || 'COD']);
 
-        const orderId = result.lastInsertRowid;
+        const orderId = orderRes.rows[0].id;
 
         // Insert Order Items and Update Product Status
-        const insertItem = db.prepare(`
-            INSERT INTO order_items (order_id, product_id, quantity, price) 
-            VALUES (?, ?, ?, ?)
-        `);
-        const updateProductStock = db.prepare(`
-            UPDATE products SET stock = stock - ? WHERE id = ?
-        `);
-        
-        const markSold = db.prepare(`
-            UPDATE products SET status = 'sold' WHERE id = ? AND stock <= 0
-        `);
-
         for (const vItem of validatedItems) {
-            insertItem.run(orderId, vItem.product_id, vItem.quantity, vItem.price);
-            updateProductStock.run(vItem.quantity, vItem.product_id); // Decrement stock
-            markSold.run(vItem.product_id); // Mark as sold ONLY if stock hits 0
+            await client.query(`
+                INSERT INTO order_items (order_id, product_id, quantity, price) 
+                VALUES ($1, $2, $3, $4)
+            `, [orderId, vItem.product_id, vItem.quantity, vItem.price]);
+
+            await client.query(`
+                UPDATE products SET stock = stock - $1 WHERE id = $2
+            `, [vItem.quantity, vItem.product_id]);
+
+             // Mark as sold ONLY if stock hits 0
+            await client.query(`
+                UPDATE products SET status = 'sold' WHERE id = $1 AND stock <= 0
+            `, [vItem.product_id]);
         }
 
-        return { orderId, totalAmount };
-    })();
+        await client.query('COMMIT');
+        
+        return NextResponse.json({ success: true, orderId });
 
-    return NextResponse.json({ success: true, orderId: orderResult.orderId });
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
 
   } catch (error) {
     console.error('Checkout Error:', error);

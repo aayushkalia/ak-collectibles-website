@@ -14,29 +14,30 @@ export default async function AdminOrdersPage() {
   }
 
   // Fetch Orders with User info
-  // We need to join (or simpler: fetch and map)
-  const orders = db.prepare(`
+  const ordersRes = await db.query(`
     SELECT orders.*, users.name as userName, users.email as userEmail
     FROM orders 
     JOIN users ON orders.user_id = users.id
     ORDER BY orders.created_at DESC
-  `).all();
+  `);
+  const orders = ordersRes.rows;
 
-  // Enhance with item count if needed, or just fetch separately. 
-  // For MVP, just summary is fine.
-  // Let's add item count manually
-  // Fetch detailed items for each order
-  const ordersWithDetails = orders.map(order => {
-      const items = db.prepare(`
+  // Enhance with item count
+  // We should ideally use a JOIN or subquery for performance, but loop is acceptable for MVP scale
+  const ordersWithDetails = [];
+  
+  for (const order of orders) {
+      const itemsRes = await db.query(`
         SELECT order_items.*, products.title, products.image_url 
         FROM order_items 
         JOIN products ON order_items.product_id = products.id 
-        WHERE order_items.order_id = ?
-      `).all(order.id);
+        WHERE order_items.order_id = $1
+      `, [order.id]);
       
+      const items = itemsRes.rows;
       const itemCount = items.length;
-      return { ...order, items, itemCount };
-  });
+      ordersWithDetails.push({ ...order, items, itemCount });
+  }
 
   return (
     <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>

@@ -217,6 +217,11 @@ export default function ProfilePage() {
                                         }}>
                                             {order.status.toUpperCase()}
                                         </span>
+                                        {order.status === 'shipped' && order.tracking_id && (
+                                            <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
+                                                Tracking: <strong>{order.tracking_id}</strong>
+                                            </p>
+                                        )}
                                     </div>
                                     <Link href={`/order-confirmation/${order.id}`} style={{ color: 'var(--color-deep-green)', textDecoration: 'underline', fontSize: '0.9rem' }}>
                                         Details

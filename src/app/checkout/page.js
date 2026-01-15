@@ -95,6 +95,9 @@ export default function CheckoutPage() {
       setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+    const shippingTotal = cart.reduce((acc, item) => acc + (item.shipping_cost || 0), 0);
+    const grandTotal = totalPrice + shippingTotal;
+
   return (
     <div style={{ backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
         <Modal 
@@ -174,7 +177,7 @@ export default function CheckoutPage() {
                             opacity: loading ? 0.7 : 1
                         }}
                     >
-                        {loading ? 'Processing...' : `Place Order - ₹${totalPrice}`}
+                        {loading ? 'Processing...' : `Place Order - ₹${grandTotal}`}
                     </button>
                     <p style={{ fontSize: '0.8rem', color: '#666', textAlign: 'center', marginTop: '0.5rem' }}>
                         By placing this order, you agree to our Terms of Service.
