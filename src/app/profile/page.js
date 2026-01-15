@@ -85,10 +85,10 @@ export default function ProfilePage() {
   return (
     <main style={{ maxWidth: '1000px', margin: '3rem auto', padding: '1rem', minHeight: '60vh' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-            <h1 style={{ color: 'var(--color-deep-green)' }}>My Profile</h1>
-            <p style={{ color: '#666' }}>Welcome back, <strong>{session.user.name || session.user.email}</strong></p>
+            <h1 style={{ color: 'var(--color-deep-green)', margin: 0 }}>My Profile</h1>
+            <p style={{ color: '#666', marginTop: '0.5rem' }}>Welcome back, <strong>{session.user.name || session.user.email}</strong></p>
         </div>
         
         {session.user.role === 'admin' && (
@@ -98,17 +98,18 @@ export default function ProfilePage() {
                 color: 'var(--color-deep-green)', 
                 textDecoration: 'none', 
                 fontWeight: 'bold', 
-                borderRadius: '4px' 
+                borderRadius: '4px',
+                whiteSpace: 'nowrap'
             }}>
                 Go to Admin Panel
             </Link>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '2rem', flexDirection: 'row' }}>
+      <div style={{ display: 'flex', gap: '2rem', flexDirection: 'row', flexWrap: 'wrap' }}>
         
         {/* Sidebar */}
-        <div style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div style={{ width: '100%', maxWidth: '250px', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 250px' }}>
             <button 
                 onClick={() => setActiveTab('orders')}
                 style={{ 
@@ -201,7 +202,7 @@ export default function ProfilePage() {
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {orders.map(order => (
-                                <div key={order.id} style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div key={order.id} style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                                     <div>
                                         <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>Order #{order.id}</h3>
                                         <p style={{ color: '#666', fontSize: '0.9rem' }}>{new Date(order.created_at).toLocaleDateString()}</p>

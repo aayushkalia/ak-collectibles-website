@@ -50,7 +50,7 @@ export default async function OrderConfirmationPage({ params }) {
                 <p style={{ color: '#666' }}>Order ID: <strong>#{order.id}</strong></p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', padding: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', padding: '2rem' }}>
                 
                 {/* Left Column: Order Details */}
                 <div>

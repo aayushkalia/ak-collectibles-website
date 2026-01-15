@@ -12,7 +12,7 @@ export default function Navbar() {
 
   return (
     <nav style={{ 
-      padding: '1rem 2rem', 
+      padding: '1rem', 
       borderBottom: '1px solid #e0e0e0',
       backgroundColor: '#FDFDF8',
       position: 'relative'
@@ -22,7 +22,8 @@ export default function Navbar() {
         justifyContent: 'space-between', 
         alignItems: 'center',
         maxWidth: '1200px',
-        margin: '0 auto'
+        margin: '0 auto',
+        width: '100%'
       }}>
         {/* Brand */}
         <Link href="/" style={{ 
@@ -127,7 +128,7 @@ export default function Navbar() {
           <Link href="/shop" onClick={() => setIsMenuOpen(false)}>Shop</Link>
           <Link href="/auctions" onClick={() => setIsMenuOpen(false)}>Auctions</Link>
           {session?.user?.role === 'admin' && (
-            <Link href="/admin" style={{ color: '#d32f2f' }}>Admin</Link>
+            <Link href="/admin" onClick={() => setIsMenuOpen(false)} style={{ color: '#d32f2f' }}>Admin</Link>
           )}
           <Link href="/cart" onClick={() => setIsMenuOpen(false)}>Cart ({cart.length})</Link>
           {session ? (

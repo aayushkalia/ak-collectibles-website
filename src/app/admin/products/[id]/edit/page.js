@@ -51,14 +51,14 @@ export default function EditProductPage({ params }) {
           category: data.category,
           media: safeMedia,
           is_auction: data.is_auction === 1,
-          selling_mode: data.is_auction.toString(),
+          selling_mode: (Number(data.is_auction) || 0).toString(),
           auction_end_time: data.auction_end_time ? new Date(data.auction_end_time).toISOString().slice(0, 16) : ''
         });
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
-        showToast('Error fetching product', 'error');
+        showToast(err.message || 'Error fetching product', 'error');
         setLoading(false);
       });
   }, [params.id, router]);

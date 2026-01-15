@@ -6,18 +6,31 @@ import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({ searchParams }) {
   const session = await getServerSession(authOptions);
 
   if (!session || session.user.role !== 'admin') {
     redirect('/login');
   }
 
+  const period = searchParams?.period || 'all';
+  let dateClause = "";
+  let queryParams = [];
+
+  if (period === 'today') {
+    dateClause = "AND created_at >= CURRENT_DATE";
+  } else if (period === '7d') {
+    dateClause = "AND created_at >= NOW() - INTERVAL '7 days'";
+  } else if (period === '30d') {
+    dateClause = "AND created_at >= NOW() - INTERVAL '30 days'";
+  }
+
   // Analytics Queries
   const productsRes = await db.query('SELECT * FROM products ORDER BY created_at DESC');
   const products = productsRes.rows;
   
-  const revenueRes = await db.query("SELECT SUM(total_amount) as revenue FROM orders WHERE status != 'cancelled'");
+  // Safe interpolation for clause since it's static strings based on limited enum input
+  const revenueRes = await db.query(`SELECT SUM(total_amount) as revenue FROM orders WHERE status != 'cancelled' ${dateClause}`);
   const totalRevenue = revenueRes.rows[0].revenue ? Number(revenueRes.rows[0].revenue) : 0;
 
   const ordersCountRes = await db.query('SELECT COUNT(*) as count FROM orders');
@@ -31,30 +44,35 @@ export default async function AdminDashboard() {
 
 
   // Stat Card Component
-  const StatCard = ({ title, value, color, icon }) => (
-    <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderLeft: `5px solid ${color}` }}>
-        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{title}</p>
-        <h3 style={{ fontSize: '1.8rem', color: '#333', marginTop: 0 }}>{value}</h3>
+  const StatCard = ({ title, value, color, icon, extra }) => (
+    <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderLeft: `5px solid ${color}`, position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+            <div>
+                <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{title}</p>
+                <h3 style={{ fontSize: '1.8rem', color: '#333', marginTop: 0 }}>{value}</h3>
+            </div>
+            {extra && <div>{extra}</div>}
+        </div>
     </div>
   );
 
   return (
     <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ color: 'var(--color-deep-green)' }}>Admin Dashboard</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <h1 style={{ color: 'var(--color-deep-green)', margin: 0 }}>Admin Dashboard</h1>
         
         {/* Quick Actions */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link href="/admin/users" style={{ padding: '0.75rem 1.5rem', backgroundColor: '#555', color: 'white', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none' }}>
+          <Link href="/admin/users" style={{ padding: '0.75rem 1.5rem', backgroundColor: '#555', color: 'white', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none', flex: '1 0 auto', textAlign: 'center' }}>
             Users
           </Link>
-          <Link href="/admin/orders" style={{ padding: '0.75rem 1.5rem', backgroundColor: 'var(--color-deep-green)', color: 'white', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none' }}>
+          <Link href="/admin/orders" style={{ padding: '0.75rem 1.5rem', backgroundColor: 'var(--color-deep-green)', color: 'white', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none', flex: '1 0 auto', textAlign: 'center' }}>
             Orders
           </Link>
-          <Link href="/admin/products/new" style={{ padding: '0.75rem 1.5rem', backgroundColor: 'var(--color-gold)', color: 'var(--color-deep-green)', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none' }}>
+          <Link href="/admin/products/new" style={{ padding: '0.75rem 1.5rem', backgroundColor: 'var(--color-gold)', color: 'var(--color-deep-green)', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none', flex: '1 0 auto', textAlign: 'center' }}>
             + Add Product
           </Link>
-          <Link href="/admin/settings" style={{ padding: '0.75rem 1.5rem', backgroundColor: '#333', color: 'white', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none' }}>
+          <Link href="/admin/settings" style={{ padding: '0.75rem 1.5rem', backgroundColor: '#333', color: 'white', fontWeight: 'bold', borderRadius: '4px', textDecoration: 'none', flex: '1 0 auto', textAlign: 'center' }}>
             Settings
           </Link>
         </div>
@@ -62,7 +80,19 @@ export default async function AdminDashboard() {
 
       {/* Stats Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <StatCard title="Total Revenue" value={`₹${totalRevenue.toLocaleString()}`} color="var(--color-deep-green)" />
+        <StatCard 
+            title={`Total Revenue (${period === 'all' ? 'All Time' : period})`} 
+            value={`₹${totalRevenue.toLocaleString()}`} 
+            color="var(--color-deep-green)" 
+            extra={
+                <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.75rem' }}>
+                    <Link href="/admin?period=today" style={{ textDecoration: period === 'today' ? 'underline' : 'none', fontWeight: period === 'today' ? 'bold' : 'normal' }}>Today</Link>
+                    <Link href="/admin?period=7d" style={{ textDecoration: period === '7d' ? 'underline' : 'none', fontWeight: period === '7d' ? 'bold' : 'normal' }}>7d</Link>
+                    <Link href="/admin?period=30d" style={{ textDecoration: period === '30d' ? 'underline' : 'none', fontWeight: period === '30d' ? 'bold' : 'normal' }}>30d</Link>
+                    <Link href="/admin" style={{ textDecoration: period === 'all' ? 'underline' : 'none', fontWeight: period === 'all' ? 'bold' : 'normal' }}>All</Link>
+                </div>
+            }
+        />
         <StatCard title="Total Orders" value={ordersCount} color="var(--color-gold)" />
         <StatCard title="Registered Users" value={usersCount} color="#1976d2" />
         <StatCard title="Inventory" value={`${soldCount} Sold / ${totalProducts}`} color="#d32f2f" />
