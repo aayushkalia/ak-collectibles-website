@@ -14,6 +14,7 @@ export async function POST(request) {
     // 'access: public' means anyone can view the image (required for website)
     const blob = await put(file.name, file, {
       access: 'public',
+      addRandomSuffix: true, // Prevent filename collisions
     });
 
     console.log('File uploaded to Vercel Blob:', blob.url);
