@@ -6,10 +6,10 @@ import styles from './shop/shop.module.css';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const auctionsRes = await db.query('SELECT * FROM products WHERE is_auction = TRUE ORDER BY auction_end_time ASC LIMIT 4');
+  const auctionsRes = await db.query('SELECT * FROM products WHERE is_auction = TRUE AND is_visible = TRUE ORDER BY auction_end_time ASC LIMIT 4');
   const auctions = auctionsRes.rows;
 
-  const newArrivalsRes = await db.query('SELECT * FROM products WHERE is_auction = FALSE ORDER BY created_at DESC LIMIT 4');
+  const newArrivalsRes = await db.query('SELECT * FROM products WHERE is_auction = FALSE AND is_visible = TRUE ORDER BY created_at DESC LIMIT 4');
   const newArrivals = newArrivalsRes.rows;
 
   return (

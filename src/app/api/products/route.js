@@ -5,7 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET() {
   try {
-    const res = await db.query('SELECT * FROM products ORDER BY created_at DESC');
+    const res = await db.query('SELECT * FROM products WHERE is_visible = true ORDER BY created_at DESC');
     const products = res.rows;
     return NextResponse.json(products);
   } catch (error) {

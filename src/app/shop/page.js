@@ -50,7 +50,7 @@ export default async function Shop({ searchParams }) {
   };
 
   // 1. Fetch Auctions 
-  let auctionQuery = `SELECT * FROM products WHERE is_auction = TRUE`;
+  let auctionQuery = `SELECT * FROM products WHERE is_auction = TRUE AND is_visible = TRUE`;
   let auctionParams = [];
   let aIdx = 1;
 
@@ -92,7 +92,7 @@ export default async function Shop({ searchParams }) {
   // 3. Fetch Direct Items (Apply ALL filters + Pagination)
   // Re-implementing buildQuery logic inline for safety with async/params
   
-  let directQueryBase = `FROM products WHERE is_auction = FALSE`;
+  let directQueryBase = `FROM products WHERE is_auction = FALSE AND is_visible = TRUE`;
   let directParams = [];
   let dIdx = 1;
 

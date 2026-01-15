@@ -19,7 +19,8 @@ export default function EditProductPage({ params }) {
     media: [], 
     is_auction: false,
     selling_mode: '0',
-    auction_end_time: ''
+    auction_end_time: '',
+    is_visible: true // Added
   });
 
   useEffect(() => {
@@ -52,7 +53,8 @@ export default function EditProductPage({ params }) {
           media: safeMedia,
           is_auction: data.is_auction === 1,
           selling_mode: (Number(data.is_auction) || 0).toString(),
-          auction_end_time: data.auction_end_time ? new Date(data.auction_end_time).toISOString().slice(0, 16) : ''
+          auction_end_time: data.auction_end_time ? new Date(data.auction_end_time).toISOString().slice(0, 16) : '',
+          is_visible: data.is_visible !== undefined ? data.is_visible : true
         });
         setLoading(false);
       })
@@ -168,7 +170,8 @@ export default function EditProductPage({ params }) {
         router.push('/admin');
         router.refresh();
       } else {
-        showToast('Failed to delete', 'error');
+        const data = await res.json().catch(() => ({}));
+        showToast(data.message || 'Failed to delete', 'error');
       }
     } catch (error) {
       console.error(error);
@@ -192,9 +195,25 @@ export default function EditProductPage({ params }) {
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', backgroundColor: 'white', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--shadow-md)' }}>
         
+        <div style={{ padding: '1rem', backgroundColor: '#e3f2fd', borderRadius: '4px', marginBottom: '1rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              name="is_visible" 
+              checked={formData.is_visible} 
+              onChange={handleChange}
+              style={{ width: '20px', height: '20px' }}
+            />
+            Show in Store (Publicly Visible)
+          </label>
+          <div style={{ fontSize: '0.85rem', color: '#555', marginTop: '0.5rem', marginLeft: '2rem' }}>
+             If unchecked, this product will be hidden from the website but remain in the database for order history.
+          </div>
+        </div>
+
         <div>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Title</label>
-          <input 
+           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Title</label>
+           <input 
             type="text" 
             name="title" 
             required 

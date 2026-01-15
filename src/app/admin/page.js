@@ -129,7 +129,11 @@ export default async function AdminDashboard({ searchParams }) {
                   )}
                 </td>
                 <td style={{ padding: '1rem' }}>
-                   {p.status === 'sold' ? <span style={{ color: 'red', fontWeight: 'bold' }}>SOLD</span> : <span style={{ color: 'green' }}>Available</span>}
+                   {p.is_visible === false ? (
+                        <span style={{ color: '#666', fontWeight: 'bold', fontStyle: 'italic' }}>Hidden</span>
+                   ) : (
+                        p.status === 'sold' ? <span style={{ color: 'red', fontWeight: 'bold' }}>SOLD</span> : <span style={{ color: 'green' }}>Available</span>
+                   )}
                 </td>
                 <td style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>

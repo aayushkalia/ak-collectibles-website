@@ -37,7 +37,7 @@ export async function PUT(request, { params }) {
   try {
     const body = await request.json();
     console.log('PUT Body received:', JSON.stringify(body, null, 2));
-    const { title, description, price, category, is_auction, auction_end_time, media, shipping_cost, stock, max_per_user } = body;
+    const { title, description, price, category, is_auction, auction_end_time, media, shipping_cost, stock, max_per_user, is_visible } = body;
 
     const mainImage = (media && media.length > 0) ? media[0].url : '';
 
@@ -51,8 +51,8 @@ export async function PUT(request, { params }) {
 
         await client.query(`
           UPDATE products 
-          SET title = $1, description = $2, price = $3, category = $4, image_url = $5, is_auction = $6, auction_end_time = $7, shipping_cost = $8, stock = $9, max_per_user = $10, status = $11
-          WHERE id = $12
+          SET title = $1, description = $2, price = $3, category = $4, image_url = $5, is_auction = $6, auction_end_time = $7, shipping_cost = $8, stock = $9, max_per_user = $10, status = $11, is_visible = $12
+          WHERE id = $13
         `, [
             title, 
             description, 
@@ -65,6 +65,7 @@ export async function PUT(request, { params }) {
             finalStock, 
             max_per_user || null,
             newStatus,
+            is_visible !== undefined ? is_visible : true,
             params.id
         ]);
 
@@ -98,14 +99,39 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const client = await db.connect();
+
   try {
-    const res = await db.query('DELETE FROM products WHERE id = $1', [params.id]);
+    await client.query('BEGIN');
+
+    // 1. Delete Dependencies (Media & Bids)
+    // We do this manually to ensure cleanup even if ON DELETE CASCADE is missing
+    await client.query('DELETE FROM product_media WHERE product_id = $1', [params.id]);
+    await client.query('DELETE FROM bids WHERE product_id = $1', [params.id]);
+
+    // 2. Delete Product
+    const res = await client.query('DELETE FROM products WHERE id = $1', [params.id]);
+    
     if (res.rowCount === 0) {
+      await client.query('ROLLBACK');
       return NextResponse.json({ message: 'Product not found' }, { status: 404 });
     }
+
+    await client.query('COMMIT');
     return NextResponse.json({ success: true });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Delete Error:', error);
-    return NextResponse.json({ message: 'Error deleting product' }, { status: 500 });
+    
+    // Handle Foreign Key Violation (e.g. Orders)
+    if (error.code === '23503') {
+        return NextResponse.json({ 
+            message: 'Cannot delete product because it is part of an existing order or has other dependencies.' 
+        }, { status: 400 });
+    }
+
+    return NextResponse.json({ message: error.message || 'Error deleting product' }, { status: 500 });
+  } finally {
+    client.release();
   }
 }
